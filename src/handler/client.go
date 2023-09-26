@@ -37,7 +37,7 @@ func CreateClient(c *gin.Context) {
 		return
 	}
 
-	if client.DataNascimento.IsZero() {
+	if client.DataNascimento == "" {
 		c.String(400, "Create Client  Error: dataNacimento not find")
 		return
 	}
@@ -86,8 +86,8 @@ func EditClient(c *gin.Context) {
 		return
 	}
 
-	if client.DataNascimento.IsZero() {
-		c.String(400, "Edit Client  Error: dataNacimento not find")
+	if client.DataNascimento == "" {
+		c.String(400, "Edit Client  Error: dataNascimento not find")
 		return
 	}
 

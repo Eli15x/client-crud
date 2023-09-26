@@ -2,13 +2,14 @@
 package storage
 
 import (
+	"fmt"
 	"database/sql"
 
 	"github.com/Eli15x/client-crud/src/model"
 	_ "github.com/lib/pq"
-	"log"
 
-	"os"
+	"time"
+	//"os"
 	"sync"
 )
 
@@ -38,19 +39,20 @@ func GetInstance() CommandClient {
 }
 
 func (c *clientSql) Connect() error {
-   connStr := "postgresql://" + os.Getenv("POSTGRES_USER")+":"+ os.Getenv("POSTGRES_PASSWORD")+"@"+os.Getenv("POSTGRES_DB")+"/todos?sslmode=disable"
-   // Connect to database
-   db, err := sql.Open("postgres", connStr)
-   if err != nil {
-       return err
-   }
-
-   err = db.Ping()
-   if err != nil {
+	var err error
+	connStr := "postgres://tuto:admingres@localhost/postgres?sslmode=disable"
+	c.db, err = sql.Open("postgres", connStr)
+	
+	if err != nil {
 		return err
-   }
-
-   return nil
+	}
+	
+	if err = c.db.Ping(); err != nil {
+		return err
+	}
+	// this will be printed in the terminal, confirming the connection to the database
+	fmt.Println("The database is connected")
+	return nil
 }
 
 func (c *clientSql) Delete(interfaceSql interface{}) error {
@@ -63,21 +65,23 @@ func (c *clientSql) Delete(interfaceSql interface{}) error {
 }
 
 func (c *clientSql) Insert(client model.Client) error {
-	err := c.db.QueryRow(
-        "INSERT INTO client(nome, sobrenome,contato,endereco,dataNacimento,cpf) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
-        client.Nome, client.Sobrenome, client.Contato, client.Endereco, client.DataNascimento, client.Cpf)
+	date, _ := time.Parse("2006-01-02", client.DataNascimento)
+	_, err :=  c.db.Query(
+        "INSERT INTO client(cpf, nome, sobrenome,contato,endereco,datanascimento) VALUES($1, $2, $3, $4, $5, $6)",
+        client.Cpf, client.Nome, client.Sobrenome, client.Contato, client.Endereco, date)
 		
-		if err != nil {
-			log.Fatal(err)
+		if err == nil {
+			return err
 		}
 
 	return nil
 }
 
 func (c *clientSql) Update(client model.Client) error {
+	date, _ := time.Parse("2006-01-02", client.DataNascimento)
 	_, err :=
-		  c.db.Exec("UPDATE client SET nome=$1, sobrenome=$2, contato=$3, endereco=$4, dataNascimento=$5 WHERE id=$6",
-		  client.Nome, client.Sobrenome, client.Contato, client.Endereco, client.DataNascimento, client.Cpf)
+		  c.db.Exec("UPDATE client SET nome=$1, sobrenome=$2, contato=$3, endereco=$4, datanascimento=$5 WHERE cpf=$6",
+		  client.Nome, client.Sobrenome, client.Contato, client.Endereco, date, client.Cpf)
 	
 	return err
 }
@@ -85,7 +89,7 @@ func (c *clientSql) Update(client model.Client) error {
 
 func (c *clientSql) GetClients() ([]model.Client, error) {
 	rows, err := c.db.Query(
-		  "SELECT nome, sobrenome,contato,endereco,dataNacimento,cpf FROM client")
+		  "SELECT nome, sobrenome,contato,endereco,datanascimento,cpf FROM client")
 		  
 	if err != nil {
 		return nil, err
@@ -105,8 +109,9 @@ func (c *clientSql) GetClients() ([]model.Client, error) {
 }
 
 func (c *clientSql) GetClient(interfaceSql interface{}) (model.Client,error) {
+	fmt.Println(interfaceSql)
 	var client model.Client
-	err := c.db.QueryRow("SELECT nome, sobrenome,contato,endereco,dataNacimento,cpf FROM client WHERE cpf=$1",
+	err := c.db.QueryRow("SELECT nome, sobrenome,contato,endereco,datanascimento,cpf FROM client WHERE cpf=$1",
 	interfaceSql).Scan(&client.Nome, &client.Sobrenome, &client.Contato, &client.Endereco, &client.DataNascimento, &client.Cpf)
 
 	if err != nil {
