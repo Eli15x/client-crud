@@ -2,6 +2,9 @@
 
 para iniciar a aplicação rode os comandos
 
+sudo docker pull rabbitmq
+sudo docker pull postgres
+
 docker-compose up 
 
 para criar a tabela :
