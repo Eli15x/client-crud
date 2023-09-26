@@ -8,7 +8,6 @@ import (
 	"github.com/Eli15x/client-crud/src/service"
 	"github.com/Eli15x/client-crud/src/model"
 	"github.com/gin-gonic/gin"
-	"github.com/labstack/gommon/log"
 )
 
 
@@ -38,7 +37,7 @@ func CreateClient(c *gin.Context) {
 		return
 	}
 
-	if client.DataNascimento == nil {
+	if client.DataNascimento.IsZero() {
 		c.String(400, "Create Client  Error: dataNacimento not find")
 		return
 	}
@@ -62,7 +61,7 @@ func CreateClient(c *gin.Context) {
 	c.String(http.StatusOK, "" )
 }
 
-func EditProduct(c *gin.Context) {
+func EditClient(c *gin.Context) {
 
 	var client model.Client
 	err := json.NewDecoder(c.Request.Body).Decode(&client)
@@ -87,7 +86,7 @@ func EditProduct(c *gin.Context) {
 		return
 	}
 
-	if client.DataNascimento == nil {
+	if client.DataNascimento.IsZero() {
 		c.String(400, "Edit Client  Error: dataNacimento not find")
 		return
 	}
@@ -102,7 +101,7 @@ func EditProduct(c *gin.Context) {
 		return
 	}
 
-	err = service.GetInstanceClient().EditClient(context.Background(), user)
+	err = service.GetInstanceClient().EditClient(context.Background(), client)
 	if err != nil {
 		c.String(400, err.Error())
 		return
@@ -111,7 +110,7 @@ func EditProduct(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-func DeletClient(c *gin.Context) {
+func DeleteClient(c *gin.Context) {
 
 	cpf := c.Param("cpf")
 
@@ -120,7 +119,7 @@ func DeletClient(c *gin.Context) {
 		return 
 	}
 
-	err = service.GetInstanceClient().DeleteClient(context.Background(), user.UserId)
+	err := service.GetInstanceClient().DeleteClient(context.Background(), cpf)
 	if err != nil {
 		c.String(400, err.Error())
 		return
@@ -138,23 +137,23 @@ func GetClient(c *gin.Context) {
 		return 
 	}
 
-	err = service.GetInstanceClient().GetClient(context.Background(), user.UserId)
+	client, err := service.GetInstanceClient().GetClient(context.Background(), cpf)
 	if err != nil {
 		c.String(400, err.Error())
 		return
 	}
 
-	c.String(http.StatusOK, "")
+	c.String(http.StatusOK, client)
 }
 
 
 func GetClients(c *gin.Context) {
 
-	err = service.GetInstanceClient().GetClients(context.Background(), user.UserId)
+	clients, err := service.GetInstanceClient().GetClients(context.Background())
 	if err != nil {
 		c.String(400, err.Error())
 		return
 	}
 
-	c.JSON(http.StatusOK,"") //return list
+	c.JSON(http.StatusOK, clients) //return list
 }

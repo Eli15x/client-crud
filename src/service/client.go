@@ -1,17 +1,14 @@
 package service
 
 import (
+	"fmt"
+	"encoding/json"
 	"context"
 	"errors"
-	"fmt"
 	"sync"
-	"time"
 
 	"github.com/Eli15x/client-crud/src/model"
 	"github.com/Eli15x/client-crud/src/storage"
-	"github.com/fatih/structs"
-	"github.com/labstack/gommon/log"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 var (
@@ -21,10 +18,10 @@ var (
 
 type CommandClient interface {
 	CreateClient(ctx context.Context, client model.Client) error
-	GetClient(ctx context.Context, id string) ([]bson.M, error)
-	GetClients(ctx context.Context, id string) ([]bson.M, error)
-	EditClient(ctx context.Context, id string, client model.Client) ([]bson.M, error)
-	DeleteClient(ctx context.Context, id string) ([]bson.M, error)
+	GetClient(ctx context.Context, id string) (string, error)
+	GetClients(ctx context.Context) (string, error)
+	EditClient(ctx context.Context, client model.Client) error 
+	DeleteClient(ctx context.Context, id string) error
 }
 
 type client struct{}
@@ -38,48 +35,63 @@ func GetInstanceClient() CommandClient {
 
 func (c *client) CreateClient(ctx context.Context, client model.Client) error {
 
-	ClientInsert := structs.Map(client)
-
-	_, err := storage.GetInstance().Insert(ctx, "profile", profileInsert)
+	err := storage.GetInstance().Insert(client)
 	if err != nil {
-		return errors.New("Create New Profile: problem to insert into Postgrees")
+		return errors.New("Create New Profile: problem to insert into Postgres")
 	}
 	return nil
 }
 
-func (c *client) EditClient(ctx context.Context, id string, client model.Client) ([]bson.M, error) {
-	var profile models.Profile
+func (c *client) EditClient(ctx context.Context, client model.Client) error {
+	
+	err := storage.GetInstance().Update(client)
+	if err != nil {
+		return errors.New("Edit Client: problem to update into Postgres")
+	}
 
-	userId := map[string]interface{}{"UserId": id}
-
-
-	return result, nil
+	return nil
 }
 
-func (c *client) DeleteClient(ctx context.Context, id string) ([]bson.M, error) {
-	var profile models.Profile
+func (c *client) DeleteClient(ctx context.Context, id string) error {
+	
+	err := storage.GetInstance().Delete(id)
+	if err != nil {
+		return errors.New("Delete Client: problem to delete into Postgres")
+	}
 
-	userId := map[string]interface{}{"UserId": id}
-
-
-	return result, nil
+	return nil
 }
 
 
-func (c *client) GetClient(ctx context.Context, id string) ([]bson.M, error) {
-	var profile models.Profile
+func (c *client) GetClient(ctx context.Context, id string) (string, error) {
 
-	userId := map[string]interface{}{"UserId": id}
+	client, err := storage.GetInstance().GetClient(id)
+	if err != nil {
+		return "",errors.New("Get Client: problem to get cpf into Postgres")
+	}
 
+	b, err := json.Marshal(client)
+    if err != nil {
+        fmt.Printf("Error: %s", err)
+        return "" , err
+    }
 
-	return result, nil
+	return string(b) , nil
 }
 
-func (c *client) GetClients(ctx context.Context, id string) ([]bson.M, error) {
-	var profile models.Profile
+func (c *client) GetClients(ctx context.Context) (string, error) {
+	
+	clients, err := storage.GetInstance().GetClients()
+	if err != nil {
+		return "", errors.New("Get Client: problem to get cpf into Postgres")
+	}
 
-	userId := map[string]interface{}{"UserId": id}
+	b, err := json.Marshal(clients)
+    if err != nil {
+        fmt.Printf("Error: %s", err)
+        return "", err
+    }
 
-
-	return result, nil
+	return string(b), nil
 }
+

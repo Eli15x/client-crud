@@ -5,9 +5,10 @@ import (
 	"database/sql"
 
 	"github.com/Eli15x/client-crud/src/model"
-	"github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	"log"
 
-	"fmt"
+	"os"
 	"sync"
 )
 
@@ -22,7 +23,7 @@ type CommandClient interface {
 	Insert(client model.Client) error
 	Update(client model.Client) error 
 	GetClients() ([]model.Client, error)
-	GetClient(interfaceSql interface{}) error 
+	GetClient(interfaceSql interface{}) (model.Client,error)
 }
 
 type clientSql struct {
@@ -37,12 +38,19 @@ func GetInstance() CommandClient {
 }
 
 func (c *clientSql) Connect() error {
-   connStr := "postgresql://" +os.Getenv("POSTGRES_USER")+":"+ os.Getenv("POSTGRES_PASSWORD")+"@"+os.Getenv("POSTGRES_DB")+"/todos?sslmode=disable"
+   connStr := "postgresql://" + os.Getenv("POSTGRES_USER")+":"+ os.Getenv("POSTGRES_PASSWORD")+"@"+os.Getenv("POSTGRES_DB")+"/todos?sslmode=disable"
    // Connect to database
    db, err := sql.Open("postgres", connStr)
    if err != nil {
-       log.Fatal(err)
+       return err
    }
+
+   err = db.Ping()
+   if err != nil {
+		return err
+   }
+
+   return nil
 }
 
 func (c *clientSql) Delete(interfaceSql interface{}) error {
@@ -55,18 +63,20 @@ func (c *clientSql) Delete(interfaceSql interface{}) error {
 }
 
 func (c *clientSql) Insert(client model.Client) error {
-	err := db.QueryRow(
+	err := c.db.QueryRow(
         "INSERT INTO client(nome, sobrenome,contato,endereco,dataNacimento,cpf) VALUES($1, $2, $3, $4, $5, $6) RETURNING id",
         client.Nome, client.Sobrenome, client.Contato, client.Endereco, client.DataNascimento, client.Cpf)
 		
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
+
+	return nil
 }
 
 func (c *clientSql) Update(client model.Client) error {
 	_, err :=
-		  db.Exec("UPDATE client SET nome=$1, sobrenome=$2, contato=$3, endereco=$4, dataNascimento=$5 WHERE id=$6",
+		  c.db.Exec("UPDATE client SET nome=$1, sobrenome=$2, contato=$3, endereco=$4, dataNascimento=$5 WHERE id=$6",
 		  client.Nome, client.Sobrenome, client.Contato, client.Endereco, client.DataNascimento, client.Cpf)
 	
 	return err
@@ -74,33 +84,36 @@ func (c *clientSql) Update(client model.Client) error {
 
 
 func (c *clientSql) GetClients() ([]model.Client, error) {
-	rows, err := db.Query(
+	rows, err := c.db.Query(
 		  "SELECT nome, sobrenome,contato,endereco,dataNacimento,cpf FROM client")
 		  
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	client := []model.Client{}
+	clients := []model.Client{}
 	
 	for rows.Next() {
-		var c client
-		if err := rows.Scan(&client.Nome, &client.Sobrenome, &client.Contato, &client.Endereco, &client.DataNascimento ,&client.Cpf); err != nil {
-			return
-			nil, err
+		var c model.Client
+		if err := rows.Scan(&c.Nome, &c.Sobrenome, &c.Contato, &c.Endereco, &c.DataNascimento ,&c.Cpf); err != nil {
+			return nil, err
 		}
-		client = append(client, c)
+		clients = append(clients, c)
 	}
 	
-	return products, nil
+	return clients, nil
 }
 
-func (c *clientSql) GetClient(interfaceSql interface{}) error {
+func (c *clientSql) GetClient(interfaceSql interface{}) (model.Client,error) {
 	var client model.Client
-	_, err := db.QueryRow("SELECT nome, sobrenome,contato,endereco,dataNacimento,cpf FROM client WHERE id=$1",
+	err := c.db.QueryRow("SELECT nome, sobrenome,contato,endereco,dataNacimento,cpf FROM client WHERE cpf=$1",
 	interfaceSql).Scan(&client.Nome, &client.Sobrenome, &client.Contato, &client.Endereco, &client.DataNascimento, &client.Cpf)
 
-	return client
+	if err != nil {
+		return client, err
+	}
+
+	return client,nil
 }
 
 
