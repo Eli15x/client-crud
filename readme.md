@@ -63,3 +63,19 @@ body
 {
 
 }
+
+## Pontuações de melhorias e finalizações
+
+a ideia da pasta docker-entrypoint era ser um script automatico para não ser necessário inserir o create da tabela diretamente na mão, que começei a implementação.
+
+tanto quanto a implementação do golang no docker.
+
+iria ajustar alguns nomes colocando tudo em padrão para ingles
+e alguns pontos de arquitetura, como também alguns tratamentos de erros.
+
+gostaria também de fazer a parte referente ao postgres generica.
+
+o rabbitmq ainda está em finalização
+
+colocaria também testes unitarios
+e mudaria o retorno referente ao formato do /get clients, que não constitui o padrão correto.
