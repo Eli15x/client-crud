@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 )
 
-func toJson(v interface{}) (string, error) {
+func ToJson(v interface{}) (string, error) {
     b, err := json.Marshal(v)
     if err != nil {
         fmt.Printf("Error: %s", err)
